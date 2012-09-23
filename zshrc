@@ -35,7 +35,11 @@ setopt inc_append_history
 setopt share_history
 ## C-sでのヒストリ検索が潰されてしまうため、出力停止・開始用にC-s/C-qを使わない。
 setopt no_flow_control
-
+setopt hist_ignore_dups # 直前のコマンドの重複を削除する。 
+setopt hist_ignore_all_dups # 重複するコマンドが記録される時、古い方を削除する。 
+setopt hist_save_no_dups # 重複するコマンドが保存される時、古い方を削除する。 
+setopt hist_expire_dups_first   # 古い履歴を削除する必要がある場合、まず重複しているものから削除する。 
+setopt hist_find_no_dups    # 履歴検索で重複しているものを表示しない
 
 # プロンプト
 ## PROMPT内で変数展開・コマンド置換・算術演算を実行する。
@@ -76,10 +80,30 @@ bg256()
 ## バージョン管理システムの情報も表示する
 autoload -Uz vcs_info
 zstyle ':vcs_info:*' formats \
-    '(%{%F{white}%K{green}%}%s%{%f%k%})-[%{%F{white}%K{blue}%}%b%{%f%k%}]'
+    '(%{%F{green}%}%s%{%f%})-[%{%F{green}%}%r%{%f%}].[%{%F{cyan}%}%b%{%f%}]-'
 zstyle ':vcs_info:*' actionformats \
-    '(%{%F{white}%K{green}%}%s%{%f%k%})-[%{%F{white}%K{blue}%}%b%{%f%k%}|%{%F{white}%K{red}%}%a%{%f%k%}]'
+    '(%{%F%K{green}%}%s%{%f%})-[%{%F{blue}%}%b%{%f%}|%{%F{red}%}%a%{%f%}]'
 
+### GIT
+zstyle ':vcs_info:git:*' formats \
+    '%{%F{green}%}✚%{%f%} %{%F{green}%}%r%{%f%}-[%{%F{cyan}%}%b%{%f%}]$(git_prompt_stash_count)'
+zstyle ':vcs_info:git:*' actionformats \
+    '%{%F{green}%}✚%{%f%} %{%F{green}%}%r%{%f%}-[%{%F{cyan}%}%b%{%f%}|%{%F{red}%}%a%{%f%}]'
+
+ZSH_THEME_GIT_PROMPT_STASH_COUNT_BEFORE="%{%F{yellow}%} 【%{%F{green}%♻ "
+ZSH_THEME_GIT_PROMPT_STASH_COUNT_AFTOR="%{%F{yellow}%】"
+# More symbols to choose from:
+# ☀ ✹ ☄ ♆ ♀ ♁ ♐ ♇ ♈ ♉ ♚ ♛ ♜ ♝ ♞ ♟ ♠ ♣ ⚢ ⚲ ⚳ ⚴ ⚥ ⚤ ⚦ ⚒ ⚑ ⚐ ♺ ♻ ♼ ☰ ☱ ☲ ☳ ☴ ☵ ☶ ☷
+# ✡ ✔ ✖ ✚ ✱ ✤ ✦ ❤ ➜ ➟ ➼ ✂ ✎ ✐ ⨀ ⨁ ⨂ ⨍ ⨎ ⨏ ⨷ ⩚ ⩛ ⩡ ⩱ ⩲ ⩵  ⩶ ⨠ 
+# ⬅ ⬆ ⬇ ⬈ ⬉ ⬊ ⬋ ⬒ ⬓ ⬔ ⬕ ⬖ ⬗ ⬘ ⬙ ⬟  ⬤ 〒 ǀ ǁ ǂ ĭ Ť Ŧ
+
+# git stash count
+function git_prompt_stash_count(){
+  COUNT=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$COUNT" -gt 0 ]; then
+    echo " $ZSH_THEME_GIT_PROMPT_STASH_COUNT_BEFORE$COUNT$ZSH_THEME_GIT_PROMPT_STASH_COUNT_AFTOR"
+  fi
+}
 ### プロンプトバーの左側
 ###   %{%B%}...%{%b%}: 「...」を太字にする。
 ###   %{%F{cyan}%}...%{%f%}: 「...」をシアン色の文字にする。
@@ -100,15 +124,15 @@ zstyle ':vcs_info:*' actionformats \
 ###   %{%f%}: 文字の色を元に戻す。
 ###   %{%b%}: 太字を元に戻す。
 ###   %D{%Y/%m/%d %H:%M}: 日付。「年/月/日 時:分」というフォーマット。
-prompt_bar_left_self="(%{%B%}%n%{%b%}%{%F{cyan}%}@%{%f%}%{%B%}%m%{%b%})"
-prompt_bar_left_status="(%{%B%F{white}%(?.%K{green}.%K{red})%}%?%{%k%f%b%})"
+prompt_bar_left_self="(%{%B%}%n%{%b%}%{%F{cyan}%}@%{%f%}%{%B%}%M%{%b%})"
+prompt_bar_left_status=" %{%B%(?.%F{green}✔.%F{red}✘)%}%{%f%b%} "
 prompt_bar_left_date="<%{%B%}%D{%Y/%m/%d %H:%M}%{%b%}>"
-prompt_bar_left="-${prompt_bar_left_self}-${prompt_bar_left_status}-${prompt_bar_left_date}-"
+prompt_bar_left="-${prompt_bar_left_status} ${prompt_bar_left_self}-${prompt_bar_left_date}-"
 ### プロンプトバーの右側
 ###   %{%B%K{magenta}%F{white}%}...%{%f%k%b%}:
 ###       「...」を太字のマゼンタ背景の白文字にする。
 ###   %d: カレントディレクトリのフルパス（省略しない）
-prompt_bar_right="-[%{%B%K{magenta}%F{white}%}%d%{%f%k%b%}]-"
+prompt_bar_right="-[%{%B%F{green}%}%d%{%f%k%b%}]-"
 
 ### 2行目左にでるプロンプト。
 ###   %h: ヒストリ数。
@@ -116,7 +140,7 @@ prompt_bar_right="-[%{%B%K{magenta}%F{white}%}%d%{%f%k%b%}]-"
 ###     %j: 実行中のジョブ数。
 ###   %{%B%}...%{%b%}: 「...」を太字にする。
 ###   %#: 一般ユーザなら「%」、rootユーザなら「#」になる。
-prompt_left="-[%h]%(1j,(%j),)%{%B%}%#%{%b%} "
+prompt_left="-%(1j,(%j),) %{%F{green}%}➜%{%f%} "
 
 ## プロンプトフォーマットを展開した後の文字数を返す。
 ## 日本語未対応。
@@ -185,7 +209,7 @@ update_prompt()
     #   %{%B%F{white}%K{green}}...%{%k%f%b%}:
     #       「...」を太字で緑背景の白文字にする。
     #   %~: カレントディレクトリのフルパス（可能なら「~」で省略する）
-    RPROMPT="[%{%B%F{white}%K{magenta}%}%~%{%k%f%b%}]"
+    RPROMPT=""
     case "$TERM_PROGRAM" in
 	Apple_Terminal)
 	    # Mac OS Xのターミナルでは$COLUMNSに右余白が含まれていないので
@@ -400,3 +424,42 @@ update_title() {
 if [ -n "$DISPLAY" ]; then
     preexec_functions=($preexec_functions update_title)
 fi
+
+#mosh
+function _mosh_hosts {
+  local -a config_hosts
+  local config
+  integer ind
+
+  # If users-hosts matches, we shouldn't complete anything else.
+  if [[ "$IPREFIX" == *@ ]]; then
+    _combination -s '[:@]' my-accounts users-hosts "users=${IPREFIX/@}" hosts "$@" && return
+  else
+    _combination -s '[:@]' my-accounts users-hosts \
+      ${opt_args[-l]:+"users=${opt_args[-l]:q}"} hosts "$@" && return
+  fi
+  if (( ind = ${words[(I)-F]} )); then
+    config=${~words[ind+1]}
+  else
+    config="$HOME/.ssh/config"
+  fi
+  if [[ -r $config ]]; then
+    local IFS=$'\t ' key hosts host
+    while read key hosts; do
+      if [[ "$key" == (#i)host ]]; then
+     for host in ${(z)hosts}; do
+        case $host in
+        (*[*?]*) ;;
+        (*) config_hosts+=("$host") ;;
+        esac
+     done
+      fi
+    done < "$config"
+    if (( ${#config_hosts} )); then
+      _wanted hosts expl 'remote host name' \
+    compadd -M 'm:{a-zA-Z}={A-Za-z} r:|.=* r:|=*' "$@" $config_hosts
+    fi
+  fi
+}
+
+compdef _mosh_hosts mosh

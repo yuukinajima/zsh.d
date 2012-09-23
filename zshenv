@@ -11,6 +11,7 @@ typeset -U path
 ##            /: ディレクトリのみ残す。
 path=(# システム用
       /bin(N-/)
+      /usr/local/sbin(N-/)
       # 自分用（--prefix=$HOME/localでインストールしたもの）
       $HOME/local/bin(N-/)
       # 自分用（gem install --user-installでインストールしたもの）
