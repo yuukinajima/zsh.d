@@ -193,3 +193,5 @@ for email_file in ${email_files}; do
     export EMAIL=$(cat "$email_file")
     break
 done
+export LC_ALL=ja_JP.UTF-8
+export LANG=ja_JP.UTF-8
