@@ -86,7 +86,7 @@ zstyle ':vcs_info:*' actionformats \
 
 ### GIT
 zstyle ':vcs_info:git:*' formats \
-    '%{%F{green}%}✚%{%f%} %{%F{green}%}%r%{%f%}-[%{%F{cyan}%}%b%{%f%}]$(git_prompt_stash_count)'
+    '%{%F{green}%}✚%{%f%} %{%F{green}%}%r%{%f%}-[%{%F{cyan}%}%b%{%f%}]'
 zstyle ':vcs_info:git:*' actionformats \
     '%{%F{green}%}✚%{%f%} %{%F{green}%}%r%{%f%}-[%{%F{cyan}%}%b%{%f%}|%{%F{red}%}%a%{%f%}]'
 
